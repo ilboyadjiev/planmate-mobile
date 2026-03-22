@@ -1,0 +1,48 @@
+name: Build and Release Planmate APK
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write 
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --debug
+
+      - name: Rename APK for clean downloading
+        run: mv build/app/outputs/flutter-apk/app-debug.apk planmate.apk
+
+      - name: Create or Update 'Latest' Release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          makeLatest: true
+          artifacts: "planmate.apk"
+          body: "Automated Android build from the latest push to the main branch."
+          name: "Latest Planmate Build"
+          tag: "latest"
+          token: ${{ secrets.GITHUB_TOKEN }}
